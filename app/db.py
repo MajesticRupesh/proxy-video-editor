@@ -1,12 +1,9 @@
-from __future__ import annotations
-
 import sqlite3
 from contextlib import contextmanager
 from datetime import datetime, timezone
-from typing import Any, Iterator
+from pathlib import Path
 
-from app.config import DB_PATH, ensure_data_dirs
-
+DB_PATH = Path(__file__).resolve().parent.parent / "data" / "app.sqlite"
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS projects (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -22,17 +19,11 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
-def connect() -> sqlite3.Connection:
-    ensure_data_dirs()
+@contextmanager
+def db():
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
-
-
-@contextmanager
-def db() -> Iterator[sqlite3.Connection]:
-    conn = connect()
     try:
         yield conn
         conn.commit()
@@ -48,7 +39,7 @@ def init_db() -> None:
         conn.executescript(SCHEMA)
 
 
-def list_projects() -> list[dict[str, Any]]:
+def list_projects() -> list[dict]:
     with db() as conn:
         rows = conn.execute(
             "SELECT id, name, created_at, updated_at FROM projects ORDER BY updated_at DESC"
@@ -56,21 +47,15 @@ def list_projects() -> list[dict[str, Any]]:
     return [dict(row) for row in rows]
 
 
-def create_project(name: str) -> dict[str, Any]:
+def create_project(name: str) -> None:
     now = utc_now()
     with db() as conn:
-        cur = conn.execute(
+        conn.execute(
             "INSERT INTO projects (name, created_at, updated_at) VALUES (?, ?, ?)",
             (name, now, now),
         )
-        row = conn.execute(
-            "SELECT id, name, created_at, updated_at FROM projects WHERE id = ?",
-            (cur.lastrowid,),
-        ).fetchone()
-    return dict(row)
 
 
-def delete_project(project_id: int) -> bool:
+def delete_project(project_id: int) -> None:
     with db() as conn:
-        cur = conn.execute("DELETE FROM projects WHERE id = ?", (project_id,))
-    return cur.rowcount > 0
+        conn.execute("DELETE FROM projects WHERE id = ?", (project_id,))
