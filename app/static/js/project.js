@@ -1,4 +1,5 @@
 import { Tus, Uppy } from "https://releases.transloadit.com/uppy/v4.15.0/uppy.min.mjs";
+import { setupEditor } from "./editor.js";
 
 const root = document.getElementById("project-root");
 if (!root) {
@@ -7,6 +8,7 @@ if (!root) {
 
 const projectId = root.dataset.id;
 const tusEndpoint = root.dataset.tus;
+const editor = setupEditor(projectId);
 
 document.querySelectorAll(".page-tabs .tab").forEach((tab) => {
   tab.addEventListener("click", () => {
@@ -17,6 +19,7 @@ document.querySelectorAll(".page-tabs .tab").forEach((tab) => {
       panel.classList.toggle("is-on", on);
       panel.hidden = !on;
     });
+    if (name === "editor") editor.show();
   });
 });
 
@@ -205,7 +208,7 @@ function actions(asset) {
     <a class="btn btn-ghost" href="/api/projects/${projectId}/assets/${asset.id}/file?download=1">Download</a>
     <button type="button" class="btn btn-ghost" data-act="rename" data-id="${asset.id}" data-name="${esc(asset.filename)}">Rename</button>
     ${proxy}
-    <button type="button" class="btn btn-ghost danger" data-act="delete" data-id="${asset.id}">Delete</button>
+    <button type="button" class="btn btn-ghost danger" data-act="delete" data-id="${asset.id}" data-name="${esc(asset.filename)}">Delete</button>
   </td>`;
 }
 
@@ -248,7 +251,20 @@ async function refreshJobs() {
     .join("");
 }
 
-async function refreshAssets() {
+function rowSig(list) {
+  return list
+    .map(
+      (a) =>
+        `${a.id}:${a.filename}:${a.size_bytes}:${a.proxy_status || ""}:${a.meta?.duration || ""}`,
+    )
+    .join("|");
+}
+
+let tableSig = { original: "", proxy: "", render: "" };
+let holdRefresh = false;
+
+async function refreshAssets(force = false) {
+  if (holdRefresh && !force) return;
   const res = await fetch(`/api/projects/${projectId}/assets`);
   if (!res.ok) return;
   const data = await res.json();
@@ -259,6 +275,9 @@ async function refreshAssets() {
   for (const [kind, list] of Object.entries(byKind)) {
     const tbody = document.querySelector(`[data-kind="${kind}"] tbody`);
     if (!tbody) continue;
+    const sig = rowSig(list);
+    if (!force && sig === tableSig[kind]) continue;
+    tableSig[kind] = sig;
     tbody.innerHTML = list.length
       ? list.map(row).join("")
       : `<tr class="empty-row"><td colspan="10">Nothing here yet.</td></tr>`;
@@ -275,6 +294,7 @@ async function refreshAssets() {
     document.getElementById("use-proxy-bar").style.width = pct(st.proxy_bytes);
     document.getElementById("use-render-bar").style.width = pct(st.render_bytes);
   }
+  editor.sync(data.assets || []);
 }
 
 setInterval(refreshAssets, 2000);
@@ -300,6 +320,34 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && viewer?.open) closeViewer();
 });
 
+function askDelete(name) {
+  const dialog = document.getElementById("confirm-dialog");
+  const copy = document.getElementById("confirm-copy");
+  const yes = document.getElementById("confirm-yes");
+  const no = document.getElementById("confirm-no");
+  if (!dialog || !yes || !no) return Promise.resolve(window.confirm(`Delete ${name}?`));
+  copy.textContent = `Delete “${name}”? This cannot be undone.`;
+  holdRefresh = true;
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = (ok) => {
+      if (done) return;
+      done = true;
+      yes.removeEventListener("click", onYes);
+      no.removeEventListener("click", onNo);
+      holdRefresh = false;
+      dialog.close();
+      resolve(ok);
+    };
+    const onYes = () => finish(true);
+    const onNo = () => finish(false);
+    yes.addEventListener("click", onYes);
+    no.addEventListener("click", onNo);
+    dialog.addEventListener("close", () => finish(false), { once: true });
+    dialog.showModal();
+  });
+}
+
 document.getElementById("asset-boards")?.addEventListener("click", async (event) => {
   const btn = event.target.closest("[data-act]");
   if (!btn) return;
@@ -322,20 +370,23 @@ document.getElementById("asset-boards")?.addEventListener("click", async (event)
     return;
   }
   if (act === "rename") {
+    holdRefresh = true;
     const name = window.prompt("New name", btn.dataset.name || "");
+    holdRefresh = false;
     if (!name) return;
     await fetch(`${url}/rename`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name }),
     });
-    refreshAssets();
+    refreshAssets(true);
     return;
   }
   if (act === "delete") {
-    if (!window.confirm("Delete this file?")) return;
+    const ok = await askDelete(btn.dataset.name || "this file");
+    if (!ok) return;
     await fetch(`${url}/delete`, { method: "POST" });
-    refreshAssets();
+    refreshAssets(true);
     return;
   }
   if (act === "proxy") {

@@ -107,7 +107,7 @@
                   {% if asset.kind == "original" and asset.media_type in ("video", "image", "audio") %}
                   <button type="button" class="btn btn-ghost" data-act="proxy" data-id="{{ asset.id }}">Proxy</button>
                   {% endif %}
-                  <button type="button" class="btn btn-ghost danger" data-act="delete" data-id="{{ asset.id }}">Delete</button>
+                  <button type="button" class="btn btn-ghost danger" data-act="delete" data-id="{{ asset.id }}" data-name="{{ asset.filename }}">Delete</button>
                 </td>
               </tr>
               {% else %}
@@ -121,12 +121,66 @@
     </div>
   </section>
 
-  <section class="tab-panel" data-panel="editor" hidden>
-    <div class="empty">
-      <h2>Editor</h2>
-      <p class="muted">Not built yet.</p>
+  <section class="tab-panel editor-panel" data-panel="editor" hidden>
+    <div class="editor-top">
+      <aside class="pool">
+        <header class="pool-head">
+          <div>
+            <h2>Media pool</h2>
+            <p class="muted" id="cache-label">Local cache —</p>
+          </div>
+          <div class="pool-actions">
+            <button type="button" class="btn btn-ghost" id="cache-load">Load</button>
+            <button type="button" class="btn btn-ghost" id="cache-unload">Unload</button>
+          </div>
+        </header>
+        <ul class="pool-list" id="pool-list"></ul>
+      </aside>
+      <div class="monitor">
+        <div class="monitor-stage" id="monitor-stage">
+          <p class="monitor-empty" id="monitor-empty">Select a proxy</p>
+          <video id="edit-video" playsinline hidden></video>
+          <img id="edit-still" alt="" hidden />
+        </div>
+        <div class="transport">
+          <button type="button" class="btn btn-accent" id="btn-play">Play</button>
+          <button type="button" class="btn btn-ghost" id="btn-cut">Cut</button>
+          <button type="button" class="btn btn-ghost" id="btn-join">Join</button>
+          <button type="button" class="btn btn-ghost danger" id="btn-lift">Lift</button>
+          <span class="tc" id="tc">0:00.00 / 0:00.00</span>
+        </div>
+      </div>
+    </div>
+    <div class="timeline" id="timeline">
+      <div class="tl-tools">
+        <span class="muted">Timeline</span>
+        <span class="tl-zoom">
+          <button type="button" class="btn btn-ghost" id="zoom-out">−</button>
+          <button type="button" class="btn btn-ghost" id="zoom-in">+</button>
+        </span>
+      </div>
+      <div class="tl-scroll" id="tl-scroll">
+        <div class="tl-body" id="tl-body">
+          <span class="tl-lane-id">V1</span>
+          <div class="tl-main" id="tl-main">
+            <div class="tl-ruler" id="tl-ruler"></div>
+            <div class="tl-track" id="tl-track"></div>
+            <div class="playhead" id="playhead"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
+  <dialog class="modal" id="cache-dialog">
+    <form method="dialog" class="modal-form" id="cache-form">
+      <h2>Edit cache</h2>
+      <p id="cache-copy">Download proxies to this browser for local playback.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" value="skip">Skip</button>
+        <button type="button" class="btn btn-accent" value="ok">Download</button>
+      </div>
+    </form>
+  </dialog>
 
   <section class="tab-panel" data-panel="render" hidden>
     <div class="empty">
@@ -135,6 +189,16 @@
     </div>
   </section>
 </div>
+<dialog class="modal" id="confirm-dialog">
+  <form method="dialog" class="modal-form">
+    <h2>Delete file?</h2>
+    <p id="confirm-copy">This cannot be undone.</p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" id="confirm-no">Cancel</button>
+      <button type="button" class="btn btn-accent" id="confirm-yes">Delete</button>
+    </div>
+  </form>
+</dialog>
 <dialog id="viewer">
   <div class="viewer-chrome">
     <p id="viewer-title">Viewer</p>

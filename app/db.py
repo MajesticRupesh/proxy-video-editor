@@ -161,6 +161,74 @@ def get_project(project_id: int) -> dict | None:
     return item
 
 
+def get_timeline(project_id: int) -> list[dict]:
+    with db() as conn:
+        row = conn.execute(
+            "SELECT timeline_json FROM projects WHERE id = ?",
+            (project_id,),
+        ).fetchone()
+    if not row:
+        return []
+    try:
+        raw = json.loads(row["timeline_json"] or "[]")
+    except json.JSONDecodeError:
+        return []
+    clips = []
+    for item in raw:
+        try:
+            asset_id = int(item.get("assetId") or item.get("asset_id"))
+            inn = float(item.get("in", 0))
+            out = float(item.get("out", 0))
+        except (TypeError, ValueError, AttributeError):
+            continue
+        asset = get_asset(asset_id)
+        if not asset or asset["project_id"] != project_id or out <= inn:
+            continue
+        meta = asset.get("meta") or {}
+        clips.append(
+            {
+                "assetId": asset_id,
+                "in": inn,
+                "out": out,
+                "filename": asset["filename"],
+                "media_type": asset["media_type"],
+                "size_bytes": asset["size_bytes"],
+                "duration_sec": float(meta.get("duration_sec") or 0),
+            }
+        )
+    return clips
+
+
+def set_timeline(project_id: int, clips: list) -> list[dict]:
+    clean = []
+    for item in clips or []:
+        try:
+            asset_id = int(item.get("assetId") or item.get("asset_id"))
+            inn = max(0.0, float(item.get("in", 0)))
+            out = float(item.get("out", 0))
+        except (TypeError, ValueError, AttributeError):
+            continue
+        if out <= inn:
+            continue
+        asset = get_asset(asset_id)
+        if not asset or asset["project_id"] != project_id:
+            continue
+        dur = float((asset.get("meta") or {}).get("duration_sec") or 0)
+        if asset["media_type"] == "image" and dur < 0.05:
+            dur = 5.0
+        if dur > 0:
+            out = min(out, dur)
+        if out <= inn:
+            continue
+        clean.append({"assetId": asset_id, "in": round(inn, 3), "out": round(out, 3)})
+    with db() as conn:
+        conn.execute(
+            "UPDATE projects SET timeline_json = ?, updated_at = ? WHERE id = ?",
+            (json.dumps(clean), utc_now(), project_id),
+        )
+    return get_timeline(project_id)
+
+
 def touch_project(project_id: int) -> None:
     with db() as conn:
         conn.execute(

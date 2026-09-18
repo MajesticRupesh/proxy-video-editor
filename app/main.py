@@ -144,6 +144,22 @@ def project_assets(project_id: int):
     return {"assets": db.list_assets(project_id), "storage": db.storage_for(project_id)}
 
 
+@app.get("/api/projects/{project_id}/timeline")
+def project_timeline(project_id: int):
+    if not db.get_project(project_id):
+        return JSONResponse({"error": "missing"}, status_code=404)
+    return {"clips": db.get_timeline(project_id)}
+
+
+@app.put("/api/projects/{project_id}/timeline")
+async def save_timeline(project_id: int, request: Request):
+    if not db.get_project(project_id):
+        return JSONResponse({"error": "missing"}, status_code=404)
+    body = await request.json()
+    clips = body.get("clips") if isinstance(body, dict) else body
+    return {"clips": db.set_timeline(project_id, clips or [])}
+
+
 def _asset_in_project(project_id: int, asset_id: int) -> dict | None:
     asset = db.get_asset(asset_id)
     if not asset or asset["project_id"] != project_id:
