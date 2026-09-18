@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} — Proxy NLE{% endblock %}
+{% block extra_head %}{% endblock %}
+{% block body %}
+<div class="app-shell project-page" id="project-root" data-id="{{ project.id }}" data-tus="{{ tus_endpoint }}">
+  <header class="topbar">
+    <div class="topbar-brand">
+      <span class="mark" aria-hidden="true"></span>
+      <div>
+        <p class="brand-kicker"><a href="/projects">Projects</a></p>
+        <h1>{{ project.name }}</h1>
+      </div>
+    </div>
+    <nav class="page-tabs" role="tablist">
+      <button type="button" class="tab is-on" data-tab="uploads">Uploads</button>
+      <button type="button" class="tab" data-tab="editor">Editor</button>
+      <button type="button" class="tab" data-tab="render">Render</button>
+    </nav>
+    <form method="post" action="/logout">
+      <button type="submit" class="btn btn-ghost">Lock</button>
+    </form>
+  </header>
+  <div class="usage" id="usage">
+    <div class="usage-nums">
+      <span>Total <b id="use-total">{{ project.storage.total }}</b></span>
+      <span>Original <b id="use-orig">{{ project.storage.original }}</b></span>
+      <span>Proxy <b id="use-proxy">{{ project.storage.proxy }}</b></span>
+      <span>Render <b id="use-render">{{ project.storage.render }}</b></span>
+    </div>
+    <div class="usage-bar" aria-hidden="true">
+      <i id="use-orig-bar" class="seg-orig"></i>
+      <i id="use-proxy-bar" class="seg-proxy"></i>
+      <i id="use-render-bar" class="seg-render"></i>
+    </div>
+  </div>
+
+  <section class="tab-panel is-on" data-panel="uploads">
+    <div class="upload-bar">
+      <button type="button" class="btn btn-accent" id="upload-btn">Upload</button>
+      <input id="file-input" type="file" multiple hidden accept="video/*,image/*,audio/*,.mov,.mxf,.mkv,.wav,.aiff" />
+      <p class="muted" id="upload-status">Video, image, or audio.</p>
+    </div>
+    <div id="uppy" class="drop-pad">Drop files here</div>
+    <div class="xfer-grid">
+      <article class="board xfer-panel">
+        <h2>Upload progress</h2>
+        <div id="upload-list" class="job-list"><p class="empty-row">No transfers yet.</p></div>
+      </article>
+      <article class="board xfer-panel">
+        <h2>Proxy generation</h2>
+        <div id="proxy-list" class="job-list"><p class="empty-row">No proxy jobs yet.</p></div>
+      </article>
+    </div>
+    <div id="asset-boards">
+      {% set groups = [
+        ("original", "Originals"),
+        ("proxy", "Proxies"),
+        ("render", "Renders")
+      ] %}
+      {% for kind, label in groups %}
+      <article class="board">
+        <h2>{{ label }}</h2>
+        <div class="table-wrap" data-kind="{{ kind }}">
+          <table class="asset-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Resolution</th>
+                <th>FPS</th>
+                <th>Bitrate</th>
+                <th>Color / audio</th>
+                <th>Duration</th>
+                <th>Size</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for asset in assets if asset.kind == kind %}
+              <tr>
+                <td>{{ asset.filename }}</td>
+                <td>{{ asset.media_type }}</td>
+                <td>{{ asset.meta.resolution or "—" }}</td>
+                <td>{{ asset.meta.fps if asset.media_type == "video" else "—" }}</td>
+                <td>{{ asset.meta.bitrate if asset.media_type != "image" else "—" }}</td>
+                <td>
+                  {% if asset.media_type == "audio" %}
+                    {{ asset.meta.codec }} · {{ asset.meta.sample_rate }} · {{ asset.meta.channels }} · {{ asset.meta.bit_depth }}
+                  {% else %}
+                    {{ asset.meta.color or "—" }}
+                  {% endif %}
+                </td>
+                <td>{{ asset.meta.duration if asset.media_type != "image" else "—" }}</td>
+                <td>{{ asset.size }}</td>
+                <td>
+                  {% if asset.kind == "original" and asset.media_type in ("video", "image") %}
+                    {{ asset.proxy_status or "—" }}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="row-actions">
+                  <button type="button" class="btn btn-ghost" data-act="view" data-id="{{ asset.id }}" data-type="{{ asset.media_type }}" data-name="{{ asset.filename }}">View</button>
+                  <a class="btn btn-ghost" href="/api/projects/{{ project.id }}/assets/{{ asset.id }}/file?download=1">Download</a>
+                  <button type="button" class="btn btn-ghost" data-act="rename" data-id="{{ asset.id }}" data-name="{{ asset.filename }}">Rename</button>
+                  {% if asset.kind == "original" and asset.media_type in ("video", "image") %}
+                  <button type="button" class="btn btn-ghost" data-act="proxy" data-id="{{ asset.id }}">Proxy</button>
+                  {% endif %}
+                  <button type="button" class="btn btn-ghost danger" data-act="delete" data-id="{{ asset.id }}">Delete</button>
+                </td>
+              </tr>
+              {% else %}
+              <tr class="empty-row"><td colspan="10">Nothing here yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="tab-panel" data-panel="editor" hidden>
+    <div class="empty">
+      <h2>Editor</h2>
+      <p class="muted">Not built yet.</p>
+    </div>
+  </section>
+
+  <section class="tab-panel" data-panel="render" hidden>
+    <div class="empty">
+      <h2>Render</h2>
+      <p class="muted">Not built yet.</p>
+    </div>
+  </section>
+</div>
+<dialog id="viewer">
+  <div class="viewer-chrome">
+    <p id="viewer-title">Viewer</p>
+    <div class="viewer-chrome-actions">
+      <a class="btn btn-ghost" id="viewer-download" href="#">Download</a>
+      <button type="button" class="btn btn-accent" id="viewer-close">Close</button>
+    </div>
+  </div>
+  <div class="viewer-stage" id="viewer-body"></div>
+</dialog>
+{% endblock %}
+{% block extra_js %}
+<script type="module" src="/static/js/project.js"></script>
+{% endblock %}

@@ -4,5 +4,6 @@ __pycache__/
 *.py[cod]
 *.log
 data/
+bin/
 .env
 .DS_Store

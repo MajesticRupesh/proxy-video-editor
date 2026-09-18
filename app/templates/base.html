@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% block title %}Proxy NLE{% endblock %}</title>
     <link rel="stylesheet" href="/static/css/app.css" />
+    {% block extra_head %}{% endblock %}
   </head>
   <body>
     {% block body %}{% endblock %}
@@ -17,5 +18,6 @@
     </footer>
     {% endblock %}
     <script src="/static/js/app.js"></script>
+    {% block extra_js %}{% endblock %}
   </body>
 </html>
