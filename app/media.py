@@ -222,15 +222,15 @@ def ingest_upload(payload: dict) -> None:
         size,
         probed,
     )
-    if probed["media_type"] in {"video", "image"}:
+    if probed["media_type"] in {"video", "image", "audio"}:
         queue_proxy(asset_id)
     log.info("ingested %s as asset %s", dest.name, asset_id)
 
 
 def queue_proxy(asset_id: int) -> str | None:
     asset = db.get_asset(asset_id)
-    if not asset or asset["kind"] != "original" or asset["media_type"] not in {"video", "image"}:
-        return "not a video or image original"
+    if not asset or asset["kind"] != "original" or asset["media_type"] not in {"video", "image", "audio"}:
+        return "not a video, image, or audio original"
     if db.active_proxy_job(asset_id):
         return "proxy already running"
     job_id = db.add_job(asset["project_id"], asset_id, "proxy")
@@ -343,6 +343,34 @@ def make_image_proxy(src: Path, dest: Path, on_progress=None) -> None:
     _run_ffmpeg(cmd, dest, 0, on_progress)
 
 
+def make_audio_proxy(src: Path, dest: Path, duration_sec: float = 0, on_progress=None) -> None:
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg:
+        raise RuntimeError("ffmpeg not on PATH")
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    cmd = [
+        ffmpeg,
+        "-y",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-nostats",
+        "-progress",
+        "pipe:1",
+        "-i",
+        str(src),
+        "-vn",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "96k",
+        "-movflags",
+        "+faststart",
+        str(dest),
+    ]
+    _run_ffmpeg(cmd, dest, duration_sec, on_progress)
+
+
 def _run_job(job_id: int) -> None:
     job = db.get_job(job_id)
     if not job:
@@ -355,10 +383,11 @@ def _run_job(job_id: int) -> None:
     src = DATA / asset["rel_path"]
     for child in db.child_assets(asset["id"], "proxy"):
         db.delete_asset(child["id"])
-    is_image = asset["media_type"] == "image"
+    kind = asset["media_type"]
+    ext = {"image": "jpg", "audio": "m4a"}.get(kind, "mp4")
     dest = db.unique_path(
         db.media_dir("proxies", asset["project_id"]),
-        f"{Path(asset['filename']).stem}_proxy.{'jpg' if is_image else 'mp4'}",
+        f"{Path(asset['filename']).stem}_proxy.{ext}",
     )
     duration = float((asset.get("meta") or {}).get("duration_sec") or 0)
 
@@ -366,8 +395,10 @@ def _run_job(job_id: int) -> None:
         db.set_job(job_id, "running", speed, pct)
 
     try:
-        if is_image:
+        if kind == "image":
             make_image_proxy(src, dest, on_progress)
+        elif kind == "audio":
+            make_audio_proxy(src, dest, duration, on_progress)
         else:
             make_proxy(
                 src,

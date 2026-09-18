@@ -94,7 +94,7 @@
                 <td>{{ asset.meta.duration if asset.media_type != "image" else "—" }}</td>
                 <td>{{ asset.size }}</td>
                 <td>
-                  {% if asset.kind == "original" and asset.media_type in ("video", "image") %}
+                  {% if asset.kind == "original" and asset.media_type in ("video", "image", "audio") %}
                     {{ asset.proxy_status or "—" }}
                   {% else %}
                     —
@@ -104,7 +104,7 @@
                   <button type="button" class="btn btn-ghost" data-act="view" data-id="{{ asset.id }}" data-type="{{ asset.media_type }}" data-name="{{ asset.filename }}">View</button>
                   <a class="btn btn-ghost" href="/api/projects/{{ project.id }}/assets/{{ asset.id }}/file?download=1">Download</a>
                   <button type="button" class="btn btn-ghost" data-act="rename" data-id="{{ asset.id }}" data-name="{{ asset.filename }}">Rename</button>
-                  {% if asset.kind == "original" and asset.media_type in ("video", "image") %}
+                  {% if asset.kind == "original" and asset.media_type in ("video", "image", "audio") %}
                   <button type="button" class="btn btn-ghost" data-act="proxy" data-id="{{ asset.id }}">Proxy</button>
                   {% endif %}
                   <button type="button" class="btn btn-ghost danger" data-act="delete" data-id="{{ asset.id }}">Delete</button>

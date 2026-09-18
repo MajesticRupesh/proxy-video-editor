@@ -185,18 +185,21 @@ function details(asset) {
   return m.color || "—";
 }
 
+function needsProxy(asset) {
+  return asset.kind === "original" && ["video", "image", "audio"].includes(asset.media_type);
+}
+
 function status(asset) {
-  if (asset.kind === "original" && (asset.media_type === "video" || asset.media_type === "image")) {
+  if (needsProxy(asset)) {
     return asset.proxy_status || "—";
   }
   return "—";
 }
 
 function actions(asset) {
-  const proxy =
-    asset.kind === "original" && (asset.media_type === "video" || asset.media_type === "image")
-      ? `<button type="button" class="btn btn-ghost" data-act="proxy" data-id="${asset.id}">Proxy</button>`
-      : "";
+  const proxy = needsProxy(asset)
+    ? `<button type="button" class="btn btn-ghost" data-act="proxy" data-id="${asset.id}">Proxy</button>`
+    : "";
   return `<td class="row-actions">
     <button type="button" class="btn btn-ghost" data-act="view" data-id="${asset.id}" data-type="${esc(asset.media_type)}" data-name="${esc(asset.filename)}">View</button>
     <a class="btn btn-ghost" href="/api/projects/${projectId}/assets/${asset.id}/file?download=1">Download</a>
