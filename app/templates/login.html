@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Unlock — Proxy NLE{% endblock %}
+{% block body %}
+<main class="login-shell">
+  <section class="login-card">
+    <p class="brand-kicker">Personal proxy editor</p>
+    <h1>Proxy NLE</h1>
+    <p class="login-copy">Enter the studio password to open the project manager.</p>
+    <form method="post" action="/login" class="login-form">
+      <label for="password">Password</label>
+      <input
+        id="password"
+        name="password"
+        type="password"
+        autocomplete="current-password"
+        autofocus
+        required
+      />
+      {% if error %}
+      <p class="form-error" role="alert">{{ error }}</p>
+      {% endif %}
+      <button type="submit" class="btn btn-accent">Unlock</button>
+    </form>
+  </section>
+</main>
+{% endblock %}

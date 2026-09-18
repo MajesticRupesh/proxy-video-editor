@@ -1,0 +1,267 @@
+:root {
+  --bg: #141414;
+  --bg-raised: #1c1c1c;
+  --panel: #232323;
+  --line: #333;
+  --text: #e6e6e6;
+  --muted: #8d8d8d;
+  --accent: #e3642b;
+  --accent-hover: #f07940;
+  --danger: #c75b5b;
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 28%),
+    radial-gradient(1200px 500px at 50% -10%, rgba(227, 100, 43, 0.08), transparent 55%);
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+h2 {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.muted,
+.brand-kicker {
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.login-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.login-card,
+.modal,
+.project-card,
+.topbar,
+.toolbar {
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+
+.login-card {
+  width: min(420px, 100%);
+  padding: 32px;
+  box-shadow: var(--shadow);
+}
+
+.login-card h1 {
+  margin: 8px 0 12px;
+  font-size: 1.7rem;
+}
+
+.login-copy {
+  color: var(--muted);
+  margin-bottom: 24px;
+  line-height: 1.45;
+}
+
+.login-form,
+.modal-form {
+  display: grid;
+  gap: 10px;
+}
+
+label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+input {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: 10px 12px;
+  font: inherit;
+}
+
+input:focus {
+  outline: 1px solid var(--accent);
+  border-color: var(--accent);
+}
+
+.btn {
+  border: 1px solid var(--line);
+  background: #2c2c2c;
+  color: var(--text);
+  padding: 9px 14px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.btn-accent {
+  background: var(--accent);
+  border-color: #c45520;
+  color: #1a0d08;
+  font-weight: 650;
+}
+
+.btn-accent:hover {
+  background: var(--accent-hover);
+}
+
+.btn-ghost {
+  background: transparent;
+}
+
+.btn-ghost.danger {
+  color: var(--danger);
+}
+
+.form-error {
+  color: #f0a3a3;
+  font-size: 0.9rem;
+}
+
+.banner {
+  margin: 0 24px 16px;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.topbar,
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.topbar {
+  padding: 14px 24px;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mark {
+  width: 28px;
+  height: 28px;
+  background: conic-gradient(from 210deg, #e3642b, #7a2c12, #e3642b);
+  clip-path: polygon(50% 0, 100% 85%, 0 85%);
+}
+
+.toolbar {
+  margin: 18px 24px 12px;
+  padding: 10px 12px;
+}
+
+.project-grid {
+  list-style: none;
+  margin: 0;
+  padding: 8px 24px 32px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.project-card {
+  display: grid;
+  overflow: hidden;
+}
+
+.thumb {
+  height: 124px;
+  background: linear-gradient(160deg, #2a2a2a, #151515);
+  display: grid;
+  place-items: center;
+}
+
+.thumb span {
+  width: 42px;
+  height: 26px;
+  border: 2px solid #555;
+  border-radius: 3px;
+  box-shadow: inset 8px 0 0 #3a3a3a;
+}
+
+.project-meta {
+  padding: 12px;
+}
+
+.project-meta h2 {
+  margin-bottom: 6px;
+}
+
+.card-actions {
+  padding: 0 8px 8px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.empty {
+  margin: 48px auto;
+  text-align: center;
+  max-width: 420px;
+}
+
+.empty h2 {
+  margin-bottom: 8px;
+  font-size: 1.2rem;
+}
+
+.modal {
+  border: 1px solid var(--line);
+  background: var(--bg-raised);
+  color: var(--text);
+  padding: 0;
+  width: min(380px, calc(100% - 32px));
+  box-shadow: var(--shadow);
+}
+
+.modal::backdrop {
+  background: rgba(0, 0, 0, 0.62);
+}
+
+.modal-form {
+  padding: 20px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}

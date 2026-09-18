@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Projects — Proxy NLE{% endblock %}
+{% block body %}
+<div class="app-shell">
+  <header class="topbar">
+    <div class="topbar-brand">
+      <span class="mark" aria-hidden="true"></span>
+      <div>
+        <p class="brand-kicker">Proxy NLE</p>
+        <h1>Project Manager</h1>
+      </div>
+    </div>
+    <form method="post" action="/logout">
+      <button type="submit" class="btn btn-ghost">Lock</button>
+    </form>
+  </header>
+
+  <section class="toolbar">
+    <p class="muted">{{ projects|length }} project{% if projects|length != 1 %}s{% endif %}</p>
+    <button type="button" class="btn btn-accent" id="new-project-btn">New Project</button>
+  </section>
+
+  {% if error %}
+  <p class="form-error banner" role="alert">{{ error }}</p>
+  {% endif %}
+
+  <dialog class="modal" id="new-project-modal">
+    <form method="post" action="/projects" class="modal-form">
+      <h2>New Project</h2>
+      <label for="project-name">Name</label>
+      <input id="project-name" name="name" type="text" maxlength="120" required />
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="cancel-project-btn">Cancel</button>
+        <button type="submit" class="btn btn-accent">Create</button>
+      </div>
+    </form>
+  </dialog>
+
+  {% if projects %}
+  <ul class="project-grid">
+    {% for project in projects %}
+    <li>
+      <article class="project-card">
+        <div class="thumb" aria-hidden="true">
+          <span></span>
+        </div>
+        <div class="project-meta">
+          <h2>{{ project.name }}</h2>
+          <p class="muted">Updated {{ project.updated_at[:10] }}</p>
+        </div>
+        <form method="post" action="/projects/{{ project.id }}/delete" class="card-actions">
+          <button type="submit" class="btn btn-ghost danger" data-confirm="Delete this project?">
+            Delete
+          </button>
+        </form>
+      </article>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="empty">
+    <h2>No projects yet</h2>
+    <p class="muted">Create a project to start cutting proxies on the next pages.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
