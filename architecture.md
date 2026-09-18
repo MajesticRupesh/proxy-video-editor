@@ -32,12 +32,14 @@ tusd and FastAPI are two processes on the host. FastAPI owns projects/jobs; tusd
 
 Opening a clip **downloads the proxy once** and plays it locally (blob URL). Scrubbing does not hit the server. Timeline is an EDL: ordered `{ assetId, in, out }` on a project.
 
+Edit cache: first visit to Edit tab prompts to download all proxies for the project (count + total MB). Store bytes in OPFS per project (`proxies/{projectId}/`), never in localStorage (flags/manifest only). Playback via blob URLs created from OPFS files. Edit tab shows local cache usage distinctly with an Unload button to delete it. Survives reload; re-validate by proxy asset id/size.
+
 Export (Render tab), user picks:
 
 - **Stream copy:** `-c copy` cut/join. Fast, keyframe-ish in/out, same codec/resolution as the original (8K in → 8K out).
 - **Re-encode:** real FFmpeg knobs (codec, preset, CRF/bitrate, scale, audio). Accurate cuts; slow on CPU.
 
-Proxy generation (upload complete): `libx264` `veryfast`/`ultrafast`, `scale=-2:360`, ~1 Mbps, AAC. 8K → 360p on CPU can take a long time; the UI shows job status.
+Proxy generation (upload complete): `libx264` `medium`, `scale=-2:360`, ~0.8 Mbps, AAC. 8K → 360p on CPU can take a long time; the UI shows job status.
 
 ## Out of scope
 
