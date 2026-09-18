@@ -2,11 +2,13 @@ import hashlib
 import logging
 import os
 import secrets
+import time
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
+import psutil
 from fastapi import FastAPI, Form, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -60,9 +62,11 @@ templates = Jinja2Templates(directory=str(ROOT / "app" / "templates"))
 class AuthGate(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
         path = request.url.path
-        if path == "/login" or path.startswith("/static/"):
+        if path in {"/login", "/api/stats"} or path.startswith("/static/"):
             return await call_next(request)
         if not request.session.get("authed"):
+            if path.startswith("/api/"):
+                return JSONResponse({"error": "auth"}, status_code=401)
             return RedirectResponse("/login", status_code=303)
         return await call_next(request)
 
@@ -75,6 +79,32 @@ app.add_middleware(
     same_site="lax",
 )
 app.mount("/static", StaticFiles(directory=str(ROOT / "app" / "static")), name="static")
+
+psutil.cpu_percent(interval=None)
+_net = psutil.net_io_counters()
+_net_t = time.monotonic()
+
+
+@app.get("/api/stats")
+def machine_stats():
+    global _net, _net_t
+    ram = psutil.virtual_memory()
+    disk = psutil.disk_usage(DATA)
+    now = time.monotonic()
+    net = psutil.net_io_counters()
+    dt = max(now - _net_t, 1e-6)
+    down = (net.bytes_recv - _net.bytes_recv) / dt
+    up = (net.bytes_sent - _net.bytes_sent) / dt
+    _net, _net_t = net, now
+    return {
+        "cpu": psutil.cpu_percent(interval=None),
+        "ram_used": ram.used,
+        "ram_total": ram.total,
+        "disk_used": disk.used,
+        "disk_total": disk.total,
+        "net_down": down,
+        "net_up": up,
+    }
 
 
 @app.get("/")

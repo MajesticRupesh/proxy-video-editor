@@ -47,6 +47,11 @@
         <div class="project-meta">
           <h2>{{ project.name }}</h2>
           <p class="muted">Updated {{ project.updated_at[:10] }}</p>
+          <dl class="storage">
+            <div><dt>Original</dt><dd>{{ project.storage.original }}</dd></div>
+            <div><dt>Proxy</dt><dd>{{ project.storage.proxy }}</dd></div>
+            <div><dt>Render</dt><dd>{{ project.storage.render }}</dd></div>
+          </dl>
         </div>
         <form method="post" action="/projects/{{ project.id }}/delete" class="card-actions">
           <button type="submit" class="btn btn-ghost danger" data-confirm="Delete this project?">

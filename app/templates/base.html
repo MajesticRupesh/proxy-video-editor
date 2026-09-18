@@ -8,6 +8,14 @@
   </head>
   <body>
     {% block body %}{% endblock %}
+    {% block footer %}
+    <footer class="statusbar" id="statusbar">
+      <span>CPU <b id="stat-cpu">—</b></span>
+      <span>RAM <b id="stat-ram">—</b></span>
+      <span>Disk <b id="stat-disk">—</b></span>
+      <span>Net <b id="stat-net">—</b></span>
+    </footer>
+    {% endblock %}
     <script src="/static/js/app.js"></script>
   </body>
 </html>
