@@ -143,18 +143,30 @@
           <img id="edit-still" alt="" hidden />
         </div>
         <div class="transport">
+          <button type="button" class="btn btn-ghost" id="btn-prev" title="Previous edit (Up)">⏮</button>
+          <button type="button" class="btn btn-ghost" id="btn-fback" title="Back 1 frame (Left)">◀</button>
           <button type="button" class="btn btn-accent" id="btn-play">Play</button>
-          <button type="button" class="btn btn-ghost" id="btn-cut">Cut</button>
-          <button type="button" class="btn btn-ghost" id="btn-join">Join</button>
-          <button type="button" class="btn btn-ghost danger" id="btn-lift">Lift</button>
-          <span class="tc" id="tc">0:00.00 / 0:00.00</span>
+          <button type="button" class="btn btn-ghost" id="btn-ffwd" title="Forward 1 frame (Right)">▶</button>
+          <button type="button" class="btn btn-ghost" id="btn-next" title="Next edit (Down)">⏭</button>
+          <button type="button" class="btn btn-ghost" id="btn-cut" title="Split at playhead (C or S)">Cut</button>
+          <button type="button" class="btn btn-ghost" id="btn-join" title="Join selected with next (same source, adjacent)">Join</button>
+          <button type="button" class="btn btn-ghost danger" id="btn-lift" title="Lift selected, leave a gap (Backspace). Shift+Backspace ripple-deletes and closes the gap.">Lift</button>
+          <span class="tc" id="tc" title="Click to type a timecode">0:00.00 / 0:00.00</span>
+          <button type="button" class="btn btn-ghost" id="btn-keys" title="Keyboard shortcuts">?</button>
         </div>
       </div>
     </div>
     <div class="tl-resizer" id="tl-resizer" title="Drag to resize timeline"></div>
     <div class="timeline" id="timeline">
       <div class="tl-tools">
-        <span class="muted">Timeline</span>
+        <span class="tl-group">
+          <button type="button" class="btn btn-ghost" id="btn-undo" title="Undo (Ctrl+Z)">↩</button>
+          <button type="button" class="btn btn-ghost" id="btn-redo" title="Redo (Ctrl+Shift+Z)">↪</button>
+          <button type="button" class="btn btn-ghost is-on" id="btn-snap" title="Snapping on/off (N)">🧲</button>
+          <button type="button" class="btn btn-ghost is-on" id="btn-follow" title="Follow playhead">Follow</button>
+          <button type="button" class="btn btn-ghost" id="btn-fit" title="Zoom to fit timeline (Shift+Z)">Fit</button>
+        </span>
+        <span class="muted" id="save-state" title="Timeline save status">Saved</span>
         <span class="tl-zoom">
           <button type="button" class="btn btn-ghost" id="zoom-out">−</button>
           <button type="button" class="btn btn-ghost" id="zoom-in">+</button>
@@ -166,11 +178,25 @@
           <div class="tl-main" id="tl-main">
             <div class="tl-ruler" id="tl-ruler"></div>
             <div class="tl-track" id="tl-track"></div>
+            <div class="snap-guide" id="snap-guide" hidden></div>
+            <div class="drop-cue" id="drop-cue" hidden></div>
             <div class="playhead" id="playhead"></div>
           </div>
         </div>
       </div>
+      <div class="trim-tip" id="trim-tip" hidden></div>
+      <div class="clip-menu" id="clip-menu" hidden></div>
     </div>
+  </section>
+  <dialog class="modal" id="keys-dialog">
+    <form method="dialog" class="modal-form">
+      <h2>Timeline shortcuts</h2>
+      <p class="keys-grid">Space/K play · J/L shuttle · ←/→ 1 frame (Shift = 1s) · ↑/↓ prev/next edit · Home/End · S/C split · Backspace lift (leave gap) · Shift+Backspace ripple delete (close gap) · double-click a gap to close it · [ / ] trim to playhead · ,/. nudge edge 1 frame · N snap · Shift+Z fit · Ctrl+wheel zoom · drag clip to move anywhere · drag edges to trim · drop pool anywhere on the timeline · Esc deselect</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-accent" id="keys-close">Close</button>
+      </div>
+    </form>
+  </dialog>
   </section>
   <dialog class="modal" id="cache-dialog">
     <form method="dialog" class="modal-form" id="cache-form">

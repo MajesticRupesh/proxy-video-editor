@@ -174,6 +174,7 @@ def get_timeline(project_id: int) -> list[dict]:
     except json.JSONDecodeError:
         return []
     clips = []
+    cursor = 0.0
     for item in raw:
         try:
             asset_id = int(item.get("assetId") or item.get("asset_id"))
@@ -185,17 +186,29 @@ def get_timeline(project_id: int) -> list[dict]:
         if not asset or asset["project_id"] != project_id or out <= inn:
             continue
         meta = asset.get("meta") or {}
+        try:
+            start = float(
+                item.get("start", item.get("timelineStart", item.get("offset", None)))
+                if ("start" in item or "timelineStart" in item or "offset" in item)
+                else cursor
+            )
+        except (TypeError, ValueError):
+            start = cursor
+        start = max(0.0, start)
         clips.append(
             {
                 "assetId": asset_id,
                 "in": inn,
                 "out": out,
+                "start": round(start, 3),
                 "filename": asset["filename"],
                 "media_type": asset["media_type"],
                 "size_bytes": asset["size_bytes"],
                 "duration_sec": float(meta.get("duration_sec") or 0),
             }
         )
+        cursor = max(cursor, start + (out - inn))
+    clips.sort(key=lambda c: (c["start"], c["assetId"]))
     return clips
 
 
@@ -220,7 +233,28 @@ def set_timeline(project_id: int, clips: list) -> list[dict]:
             out = min(out, dur)
         if out <= inn:
             continue
-        clean.append({"assetId": asset_id, "in": round(inn, 3), "out": round(out, 3)})
+        try:
+            start = max(
+                0.0,
+                float(item.get("start", item.get("timelineStart", item.get("offset", 0)))),
+            )
+        except (TypeError, ValueError):
+            start = 0.0
+        clean.append(
+            {
+                "assetId": asset_id,
+                "in": round(inn, 3),
+                "out": round(out, 3),
+                "start": round(start, 3),
+            }
+        )
+    # sort by start and push overlapping clips forward so gaps model stays valid
+    clean.sort(key=lambda c: (c["start"], c["assetId"]))
+    cursor = 0.0
+    for c in clean:
+        if c["start"] < cursor:
+            c["start"] = round(cursor, 3)
+        cursor = c["start"] + (c["out"] - c["in"])
     with db() as conn:
         conn.execute(
             "UPDATE projects SET timeline_json = ?, updated_at = ? WHERE id = ?",
