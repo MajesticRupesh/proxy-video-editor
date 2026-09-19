@@ -50,6 +50,9 @@ export function setupEditor(projectId) {
   const main = document.getElementById("tl-main");
   const playhead = document.getElementById("playhead");
   const scroll = document.getElementById("tl-scroll");
+  const timelineEl = document.getElementById("timeline");
+  const editorPanel = document.querySelector('.tab-panel[data-panel="editor"]');
+  const resizer = document.getElementById("tl-resizer");
 
   let assets = [];
   let clips = [];
@@ -613,6 +616,62 @@ export function setupEditor(projectId) {
     pxPerSec = Math.max(12, pxPerSec / 1.25);
     paintClips();
   });
+
+  const TL_H_KEY = `tl-height:${projectId}`;
+  const TL_H_DEFAULT = 230;
+  const TL_H_MIN = 120;
+  function clampTlHeight(px) {
+    const panelH = editorPanel?.clientHeight || window.innerHeight;
+    const max = Math.max(TL_H_MIN + 40, panelH - 140);
+    return Math.max(TL_H_MIN, Math.min(max, Math.round(px)));
+  }
+  function applyTlHeight(px, save = true) {
+    if (!editorPanel) return;
+    const h = clampTlHeight(px);
+    editorPanel.style.setProperty("--tl-h", `${h}px`);
+    if (save) {
+      try {
+        localStorage.setItem(TL_H_KEY, String(h));
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+  try {
+    const saved = Number(localStorage.getItem(TL_H_KEY));
+    if (Number.isFinite(saved) && saved >= TL_H_MIN) applyTlHeight(saved, false);
+  } catch {
+    /* ignore */
+  }
+  if (resizer && editorPanel && timelineEl) {
+    let resizing = null;
+    resizer.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      resizing = { startY: event.clientY, startH: timelineEl.offsetHeight };
+      resizer.classList.add("is-drag");
+      resizer.setPointerCapture?.(event.pointerId);
+    });
+    resizer.addEventListener("pointermove", (event) => {
+      if (!resizing) return;
+      applyTlHeight(resizing.startH + (resizing.startY - event.clientY), false);
+    });
+    const endResize = (event) => {
+      if (!resizing) return;
+      applyTlHeight(resizing.startH + (resizing.startY - event.clientY), true);
+      resizing = null;
+      resizer.classList.remove("is-drag");
+    };
+    resizer.addEventListener("pointerup", endResize);
+    resizer.addEventListener("pointercancel", () => {
+      resizing = null;
+      resizer.classList.remove("is-drag");
+    });
+    resizer.addEventListener("dblclick", () => applyTlHeight(TL_H_DEFAULT, true));
+    window.addEventListener("resize", () => {
+      const cur = timelineEl.offsetHeight;
+      if (cur) applyTlHeight(cur, false);
+    });
+  }
 
   document.getElementById("cache-load")?.addEventListener("click", async () => {
     const need = await missing().catch(() => []);
